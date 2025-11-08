@@ -21,9 +21,27 @@ struct RunView: View {
     @State private var isFinished: Bool = false
     @State private var isGeneratingGIF: Bool = false
     @State private var bannerShake: CGFloat = 0
+    @State private var statsSheetHeight: CGFloat = 0
 
     private let targetZoomLevel: Int = 19
     
+    // PreferenceKey for measuring stats sheet height
+    private struct StatsHeightKey: PreferenceKey {
+        static var defaultValue: CGFloat = 0
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+    }
+    
+    private var userInitials: String {
+        let f = (account.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let l = (account.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var s = ""
+        if let c = f.first { s.append(String(c)) }
+        if let c = l.first { s.append(String(c)) }
+        if s.isEmpty, let phone = account.phoneNumber, let c = phone.first {
+            s.append(String(c))
+        }
+        return s.isEmpty ? "?" : s.uppercased()
+    }
     private var isLocationAuthorized: Bool {
         let s = locationManager.authorizationStatus
         return s == .authorizedAlways || s == .authorizedWhenInUse
@@ -69,7 +87,8 @@ struct RunView: View {
                 route: tracker.routeCoordinates, 
                 userCoordinate: isFinished ? nil : locationManager.lastCoordinate,  // Hide pulse when finished
                 followUser: true,
-                profileGIFURL: account.profileGIFURL,
+                profileGIFURL: account.pendingSelfieGIFToAdd ?? account.profileGIFURL,
+                initials: userInitials,
                 isRunning: isRunning,
                 currentPace: currentPaceString
             )
@@ -77,6 +96,9 @@ struct RunView: View {
                 .onAppear { 
                     locationManager.start()
                     centerOnUserIfAvailable() 
+                    if account.profileGIFURL == nil {
+                        Task { await account.loadProfileFromSupabase() }
+                    }
                 }
                 .onReceive(locationManager.$lastCoordinate) { _ in
                     // Always follow user location
@@ -219,11 +241,31 @@ struct RunView: View {
 			}
 
             // Removed close button per design
-
+			
             // Stats sheet - always visible until finished
             if !isFinished {
                 VStack(spacing: 0) {
                     Spacer()
+                    // Recenter button positioned just above the stats sheet so it moves with it
+                    HStack {
+                        Spacer()
+                        Button(action: { recenterMapToUserNow() }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                Image("LocationButton")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(width: 44, height: 44)
+                            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 16)
+                    }
+                    .padding(.bottom, 12)
                     RunStatsSheet(
                         elapsed: tracker.elapsedSeconds,
                         distanceMeters: tracker.distanceMeters,
@@ -247,10 +289,13 @@ struct RunView: View {
                             } else {
                                 let generator = UIImpactFeedbackGenerator(style: .medium)
                                 generator.prepare(); generator.impactOccurred()
-                                tracker.start()
-                                recenterMapForRunning()  // Recenter map to show user at 15% height
-                                isRunning = true
-                                isPaused = false
+                                // Ensure Motion & Fitness permission at Start tap
+                                tracker.ensureMotionPermission { _ in
+                                    tracker.start()
+                                    recenterMapForRunning()  // Recenter map to show user at 15% height
+                                    isRunning = true
+                                    isPaused = false
+                                }
                             }
                         },
                         onPauseToggle: {
@@ -299,15 +344,18 @@ struct RunView: View {
                             .cornerRadius(35, corners: [.topLeft, .topRight])
                             .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: -2)
                     )
-					.overlay(alignment: .top) {
-						// Sheet handle
-						Capsule()
-							.fill(Color(.systemGray4))
-							.frame(width: 44, height: 5)
-							.padding(.top, 8)
-					}
+                    // Measure the actual height of the stats sheet to offset map centering
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .preference(key: StatsHeightKey.self, value: proxy.size.height)
+                        }
+                    )
                     .clipShape(RoundedCorners(radius: 35, corners: [.topLeft, .topRight]))
                     .padding(.horizontal, 0)
+                }
+                .onPreferenceChange(StatsHeightKey.self) { h in
+                    statsSheetHeight = h
                 }
                 .ignoresSafeArea(edges: .bottom)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -330,7 +378,7 @@ struct RunView: View {
                         elapsed: tracker.elapsedSeconds,
                         distanceMeters: tracker.distanceMeters,
                         routeCoordinates: tracker.routeCoordinates,
-                        selfieGIFURL: account.profileGIFURL ?? account.pendingSelfieGIFToAdd,
+                        selfieGIFURL: account.pendingSelfieGIFToAdd ?? account.profileGIFURL,
                         onBack: {
                             withAnimation {
                                 isFinished = false
@@ -374,7 +422,12 @@ struct RunView: View {
         }
         if !hasCentered {
             withAnimation(.easeInOut(duration: 0.25)) {
-                region = regionFor(center: coord, zoom: targetZoomLevel)
+                var baseRegion = regionFor(center: coord, zoom: targetZoomLevel)
+                let yPercent = desiredUserYPercent()
+                let offsetRatio = 0.50 - yPercent
+                let latitudeOffset = baseRegion.span.latitudeDelta * offsetRatio
+                baseRegion.center.latitude += latitudeOffset
+                region = baseRegion
             }
             hasCentered = true
         }
@@ -384,9 +437,9 @@ struct RunView: View {
         guard let coord = locationManager.lastCoordinate else { return }
         withAnimation(.easeInOut(duration: 0.3)) {
             var baseRegion = regionFor(center: coord, zoom: targetZoomLevel)
-            
-            // When running, position user at 85% of screen height
-            let offsetRatio = 0.50 - 0.85  // -0.35 offset to move user location to 85% from top
+            // Position user at the vertical center of the visible space between top safe area and stats sheet
+            let yPercent = desiredUserYPercent()
+            let offsetRatio = 0.50 - yPercent
             let latitudeOffset = baseRegion.span.latitudeDelta * offsetRatio
             
             baseRegion.center.latitude += latitudeOffset
@@ -397,10 +450,25 @@ struct RunView: View {
     private func updateMapToFollowUser() {
         guard let coord = locationManager.lastCoordinate else { return }
         withAnimation(.easeInOut(duration: 0.25)) {
-            // Always center directly on the user's current coordinate
-            region = regionFor(center: coord, zoom: targetZoomLevel)
+            var baseRegion = regionFor(center: coord, zoom: targetZoomLevel)
+            let yPercent = desiredUserYPercent()
+            let offsetRatio = 0.50 - yPercent
+            baseRegion.center.latitude += baseRegion.span.latitudeDelta * offsetRatio
+            region = baseRegion
         }
     }
+	
+	// Recenter button action – always recenters regardless of prior centering state
+	private func recenterMapToUserNow() {
+		guard let coord = locationManager.lastCoordinate else { return }
+		withAnimation(.easeInOut(duration: 0.25)) {
+			var baseRegion = regionFor(center: coord, zoom: targetZoomLevel)
+			let yPercent = desiredUserYPercent()
+			let offsetRatio = 0.50 - yPercent
+			baseRegion.center.latitude += baseRegion.span.latitudeDelta * offsetRatio
+			region = baseRegion
+		}
+	}
 
     // Replace MapViewModel.regionFor with a local helper.
     private func regionFor(center: CLLocationCoordinate2D, zoom: Int) -> MKCoordinateRegion {
@@ -410,6 +478,22 @@ struct RunView: View {
         let lonDelta = latDelta
         return MKCoordinateRegion(center: center,
                                   span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta))
+    }
+    
+    // Compute the desired Y percentage for the user location between top safe area and the stats sheet
+    private func desiredUserYPercent() -> Double {
+        let screenH = UIScreen.main.bounds.height
+        let topInset: CGFloat = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?
+            .windows.first?.safeAreaInsets.top ?? 0
+        let bottomH: CGFloat = statsSheetHeight
+        let visible = max(1.0, screenH - topInset - bottomH)
+        // Coordinate maps to the BOTTOM of the pulse circle (radius ≈ 20pt), so shift by +radius
+        let circleRadius: CGFloat = 20
+        var desiredY = topInset + visible / 2.0 + circleRadius
+        // Ensure the coordinate stays above the stats sheet top
+        desiredY = min(desiredY, screenH - bottomH - 1)
+        let yPercent = max(0.05, min(0.95, desiredY / screenH))
+        return Double(yPercent)
     }
 
     // Compute a map region that fits the entire route with padding
@@ -610,20 +694,20 @@ struct RunView: View {
         return renderer.image { ctx in
             let rect = CGRect(x: 0, y: 0, width: diameter, height: diameter)
             
-            // 1) Draw neon circle background with shadow
+            // 1) Draw white circle background with shadow
             ctx.cgContext.setShadow(offset: CGSize(width: 0, height: 0), blur: 6, color: UIColor.black.withAlphaComponent(0.25).cgColor)
-            UIColor(red: 0xB8/255.0, green: 0xFF/255.0, blue: 0x1B/255.0, alpha: 1.0).setFill()
+            UIColor.white.setFill()
             let circlePath = UIBezierPath(ovalIn: rect)
             circlePath.fill()
             
-            // 2) Draw white stroke
+            // 2) Draw neon stroke
             ctx.cgContext.setShadow(offset: .zero, blur: 0, color: nil)
-            UIColor.white.setStroke()
+            UIColor(Color.neon).setStroke()
             circlePath.lineWidth = 2
             circlePath.stroke()
             
             // 3) Load GIF first frame and apply AspectPreservingGIF clip shape
-            if let url = account.profileGIFURL ?? account.pendingSelfieGIFToAdd,
+            if let url = account.pendingSelfieGIFToAdd ?? account.profileGIFURL,
                let data = try? Data(contentsOf: url),
                let src = CGImageSourceCreateWithData(data as CFData, nil),
                let cg = CGImageSourceCreateImageAtIndex(src, 0, nil) {
@@ -839,13 +923,21 @@ private struct RunStatsSheet: View {
             if !isRunning {
                 // Not started - show Start button
                 Button(action: onStart) {
-                    Text("Start")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(locationAuthorized ? .black : .white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 58)
-                        .background(locationAuthorized ? Color.neon : Color(.systemGray4))
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    HStack(spacing: 8) {
+                        Image("SuperbaStart")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(locationAuthorized ? .black : .white)
+                        Text("Start")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(locationAuthorized ? .black : .white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(locationAuthorized ? Color.neon : Color(.systemGray4))
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(!locationAuthorized)
@@ -874,24 +966,40 @@ private struct RunStatsSheet: View {
                 // Paused - show Resume and Finish buttons
                 HStack(spacing: 12) {
                     Button(action: onResume) {
-                        Text("Resume")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 60)
-                            .background(Color(white: 0.95))
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                        HStack(spacing: 8) {
+                            Image("Resume")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(.black)
+                            Text("Resume")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 60)
+                        .background(Color(white: 0.95))
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                     .buttonStyle(.plain)
                     
                     Button(action: onFinish) {
-                        Text("Finish")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 60)
-                            .background(Color.neon)
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                        HStack(spacing: 8) {
+                            Image("Finish")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(.black)
+                            Text("Finish")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 60)
+                        .background(Color.neon)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                     .buttonStyle(.plain)
                 }
@@ -969,19 +1077,39 @@ final class RunTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             manager.requestWhenInUseAuthorization()
         }
         
-        // Request Motion & Fitness permission
-        requestMotionPermission()
+        // Request Motion & Fitness permission lazily on Start tap (see ensureMotionPermission)
     }
     
-    private func requestMotionPermission() {
-        // Check if motion tracking is available
+    func ensureMotionPermission(_ completion: @escaping (Bool) -> Void) {
         guard CMPedometer.isStepCountingAvailable() else {
-            print("⚠️ Step counting not available on this device")
-            return
+            completion(false); return
         }
-        
-        // Request permission by starting pedometer (permission will be requested automatically)
-        print("📱 Motion & Fitness permission will be requested when run starts")
+        if #available(iOS 11.0, *) {
+            let status = CMPedometer.authorizationStatus()
+            switch status {
+            case .authorized:
+                completion(true); return
+            case .denied, .restricted:
+                completion(false); return
+            case .notDetermined:
+                break // fallthrough to trigger prompt
+            @unknown default:
+                break
+            }
+        }
+        // Trigger the system prompt by issuing a tiny query; then report status
+        let now = Date()
+        pedometer.queryPedometerData(from: now.addingTimeInterval(-60), to: now) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                guard let _ = self else { completion(false); return }
+                if #available(iOS 11.0, *) {
+                    completion(CMPedometer.authorizationStatus() == .authorized)
+                } else {
+                    // On older iOS, lack of error is the best signal
+                    completion(true)
+                }
+            }
+        }
     }
 
     // Only allow background location if app has UIBackgroundModes: location AND Always auth granted
@@ -1440,6 +1568,7 @@ private struct RunMKMapView: UIViewRepresentable {
     var userCoordinate: CLLocationCoordinate2D?
     var followUser: Bool
     var profileGIFURL: URL?
+    var initials: String?
     var isRunning: Bool
     var currentPace: String
 
@@ -1461,17 +1590,17 @@ private struct RunMKMapView: UIViewRepresentable {
             map.setRegion(region, animated: true)
         }
         
-        // Update route overlay
+        // Update route overlay — only draw when actively running
         let existing = map.overlays
         let polylines = existing.compactMap { $0 as? MKPolyline }
         if !polylines.isEmpty { map.removeOverlays(polylines) }
-        if route.count >= 2 {
+        if isRunning, route.count >= 2 {
             let poly = MKPolyline(coordinates: route, count: route.count)
             map.addOverlay(poly)
         }
         
         // Update custom user location annotation
-        context.coordinator.updateUserLocation(map: map, coordinate: userCoordinate, gifURL: profileGIFURL, isRunning: isRunning, pace: currentPace)
+        context.coordinator.updateUserLocation(map: map, coordinate: userCoordinate, gifURL: profileGIFURL, initials: initials, isRunning: isRunning, pace: currentPace)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -1479,7 +1608,7 @@ private struct RunMKMapView: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         private var userLocationAnnotation: MyLocationPulseAnnotation?
         
-        func updateUserLocation(map: MKMapView, coordinate: CLLocationCoordinate2D?, gifURL: URL?, isRunning: Bool, pace: String) {
+        func updateUserLocation(map: MKMapView, coordinate: CLLocationCoordinate2D?, gifURL: URL?, initials: String?, isRunning: Bool, pace: String) {
             if let coord = coordinate {
                 if let existing = userLocationAnnotation {
                     // Update existing annotation position and pace
@@ -1489,11 +1618,12 @@ private struct RunMKMapView: UIViewRepresentable {
                     // Update the view if it exists
                     if let view = map.view(for: existing) as? MyLocationPulseAnnotationView {
                         view.updatePace(pace: pace, isRunning: isRunning)
+                        view.updateInitials(initials)
                     }
                 } else {
                     // Create new annotation with profile URL
                     let profileURLString = gifURL?.absoluteString
-                    let annotation = MyLocationPulseAnnotation(coordinate: coord, profileURLString: profileURLString, fallbackGIFURL: gifURL, isRunning: isRunning, pace: pace)
+                    let annotation = MyLocationPulseAnnotation(coordinate: coord, profileURLString: profileURLString, fallbackGIFURL: gifURL, initials: initials, isRunning: isRunning, pace: pace)
                     userLocationAnnotation = annotation
                     map.addAnnotation(annotation)
                     
@@ -1528,7 +1658,7 @@ private struct RunMKMapView: UIViewRepresentable {
                 let renderer = GradientPolylineRenderer(polyline: poly,
                                                         startColor: UIColor(red: 0xA9/255.0, green: 0xE4/255.0, blue: 0xFF/255.0, alpha: 1.0),
                                                         endColor: UIColor(red: 0x11/255.0, green: 0x91/255.0, blue: 0xE6/255.0, alpha: 1.0))
-                renderer.lineWidth = 6
+                renderer.lineWidth = 10
                 renderer.lineCap = .round
                 renderer.lineJoin = .round
                 return renderer
@@ -1543,13 +1673,15 @@ private class MyLocationPulseAnnotation: NSObject, MKAnnotation {
     @objc dynamic var coordinate: CLLocationCoordinate2D
     let profileURLString: String?
     let fallbackGIFURL: URL?
+    let initials: String?
     var isRunning: Bool
     var pace: String
     
-    init(coordinate: CLLocationCoordinate2D, profileURLString: String?, fallbackGIFURL: URL?, isRunning: Bool, pace: String) {
+    init(coordinate: CLLocationCoordinate2D, profileURLString: String?, fallbackGIFURL: URL?, initials: String?, isRunning: Bool, pace: String) {
         self.coordinate = coordinate
         self.profileURLString = profileURLString
         self.fallbackGIFURL = fallbackGIFURL
+        self.initials = initials
         self.isRunning = isRunning
         self.pace = pace
         super.init()
@@ -1562,6 +1694,7 @@ private class MyLocationPulseAnnotationView: MKAnnotationView, WKNavigationDeleg
     private var webView: WKWebView?
     private var messageController: WKUserContentController?
     private var hostingController: UIHostingController<AnyView>? = nil
+    private let initialsLabel = UILabel()
     private let stickerInset: CGFloat = 1.5
     private let stickerHeightMultiplier: CGFloat = 1.8
     private var didAnimateIn: Bool = false
@@ -1693,28 +1826,46 @@ private class MyLocationPulseAnnotationView: MKAnnotationView, WKNavigationDeleg
         container.transform = .identity
 
         let circle = UIView(frame: container.bounds)
-        circle.backgroundColor = UIColor(red: 0x5C/255.0, green: 0xBA/255.0, blue: 0xF2/255.0, alpha: 1.0)  // Changed from iosBlue to #5CBAF2
+        circle.backgroundColor = .white
         circle.layer.cornerRadius = size / 2
         circle.layer.masksToBounds = true
         circle.layer.shadowColor = UIColor.black.cgColor
         circle.layer.shadowOpacity = 0.25
         circle.layer.shadowRadius = 8
         container.addSubview(circle)
+        
+        // Outward shadow behind the circle+stroke (kept below white fill so it doesn't tint inside)
+        let outerShadow = UIView(frame: container.bounds.insetBy(dx: -3, dy: -3))
+        outerShadow.backgroundColor = .clear
+        outerShadow.layer.cornerRadius = (size / 2) + 3
+        outerShadow.layer.shadowColor = UIColor.black.cgColor
+        outerShadow.layer.shadowOpacity = 0.22
+        outerShadow.layer.shadowRadius = 6
+        outerShadow.layer.shadowOffset = CGSize(width: 0, height: 2)
+        outerShadow.layer.shadowPath = UIBezierPath(roundedRect: outerShadow.bounds, cornerRadius: outerShadow.layer.cornerRadius).cgPath
+        container.insertSubview(outerShadow, belowSubview: circle)
 
-        // Outer white stroke: draw outside the blue circle with 3pt thickness
+        // Outer neon stroke: draw outside the circle with 3pt thickness
         let stroke = UIView(frame: container.bounds.insetBy(dx: -3, dy: -3))
         stroke.backgroundColor = .clear
         stroke.layer.cornerRadius = (size / 2) + 3
-        stroke.layer.borderColor = UIColor.white.cgColor
+        stroke.layer.borderColor = UIColor(Color.neon).cgColor
         stroke.layer.borderWidth = 3
-        // Add subtle shadow behind the white stroke
+        // No shadow on stroke to avoid tinting the white fill
         stroke.layer.masksToBounds = false
-        stroke.layer.shadowColor = UIColor.black.cgColor
-        stroke.layer.shadowOpacity = 0.22
-        stroke.layer.shadowRadius = 6
-        stroke.layer.shadowOffset = CGSize(width: 0, height: 2)
-        stroke.layer.shadowPath = UIBezierPath(roundedRect: stroke.bounds, cornerRadius: stroke.layer.cornerRadius).cgPath
         container.addSubview(stroke)
+
+        // Initials label fallback (hidden by default)
+        initialsLabel.frame = container.bounds
+        initialsLabel.textAlignment = .center
+        initialsLabel.textColor = .black
+        if let knewave = UIFont(name: "Knewave", size: 18) {
+            initialsLabel.font = knewave
+        } else {
+            initialsLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        }
+        initialsLabel.isHidden = true
+        container.addSubview(initialsLabel)
 
         webContainer.frame = .zero
         webContainer.layer.masksToBounds = false  // CRITICAL: Allow overflow for negative originY
@@ -1856,16 +2007,33 @@ private class MyLocationPulseAnnotationView: MKAnnotationView, WKNavigationDeleg
             isContentLoaded = true
             container.alpha = 1.0
             container.transform = .identity
+            initialsLabel.isHidden = true
         } else {
             // No content to load; clear hosted view
             hostingController?.view.removeFromSuperview()
             hostingController = nil
             webView?.isHidden = true
             applyStickerLayout()
+            // Show initials
+            if let ann = self.annotation as? MyLocationPulseAnnotation {
+                initialsLabel.text = (ann.initials ?? "?").uppercased()
+                initialsLabel.isHidden = false
+            } else {
+                initialsLabel.text = "?"
+                initialsLabel.isHidden = false
+            }
         }
         
         // Update pace banner
         updatePace(pace: annotation.pace, isRunning: annotation.isRunning)
+    }
+
+    func updateInitials(_ initials: String?) {
+        initialsLabel.text = (initials ?? "?").uppercased()
+        // Only show if there is no GIF content loaded
+        if isContentLoaded {
+            initialsLabel.isHidden = true
+        }
     }
 
     override func prepareForReuse() {
@@ -2277,7 +2445,7 @@ struct RunSummarySheet: View {
                     // Discard button
                     Button(action: { showDiscardConfirm = true }) {
                         HStack(spacing: 8) {
-                            Image("Delete")
+                            Image("Discard")
                                 .renderingMode(.template)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
@@ -2302,19 +2470,19 @@ struct RunSummarySheet: View {
                         Text("This will delete the final stat summary and return to Run View.")
                     }
                     
-                    // Aug here button
+                    // Aug here button (renamed to Continue)
                     Button(action: {
                         onAugItHere()
                         onBack()
                     }) {
                         HStack(spacing: 8) {
-                            Image("sticker-white")
+                            Image("Finish")
                                 .renderingMode(.template)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 20, height: 20)
                                 .foregroundColor(.black)
-                            Text("aug here")
+                            Text("Continue")
                                 .font(.system(size: 20, weight: .semibold))  // Add semibold weight
                                 .baselineOffset(2)  // Vertically trim and align text
                         }

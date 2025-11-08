@@ -10,6 +10,8 @@ final class AccountManager: ObservableObject {
     @Published var pendingSelfieGIFToAdd: URL? = nil
     @Published var runProfileURL: URL? = nil
     @Published var phoneNumber: String? = nil
+    @Published var firstName: String? = nil
+    @Published var lastName: String? = nil
 
     // Live activity resume flags
     @Published var liveActivityResumeElapsed: Int? = nil
@@ -41,6 +43,8 @@ final class AccountManager: ObservableObject {
         let phone: String?
         let profile_clip_url: String?
         let run_profile_url: String?
+        let first_name: String?
+        let last_name: String?
     }
 
     func loadProfileFromSupabase() async {
@@ -66,6 +70,8 @@ final class AccountManager: ObservableObject {
             }
             if let row = response.first {
                 self.phoneNumber = row.phone ?? phone
+                self.firstName = row.first_name
+                self.lastName = row.last_name
                 if let gif = row.profile_clip_url, let url = URL(string: gif) {
                     self.profileGIFURL = url
                 }
@@ -74,10 +80,13 @@ final class AccountManager: ObservableObject {
                 }
             } else {
                 self.phoneNumber = phone
+                self.firstName = self.firstName
+                self.lastName = self.lastName
             }
         } catch {
             // Non-fatal; keep defaults
             self.phoneNumber = phone
+            // keep existing names if any
         }
     }
 }

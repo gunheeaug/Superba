@@ -13,6 +13,13 @@
 		E6953F332EBC240100C01C4E /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F322EBC240100C01C4E /* Realtime */; };
 		E6953F352EBC240100C01C4E /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F342EBC240100C01C4E /* Storage */; };
 		E6953F372EBC240100C01C4E /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F362EBC240100C01C4E /* Supabase */; };
+		E69544202EBF3A3900C01C4E /* Knewave-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E695441F2EBF3A3900C01C4E /* Knewave-Regular.ttf */; };
+		E695447F2EBF3EB300C01C4E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E695447E2EBF3EB300C01C4E /* WidgetKit.framework */; };
+		E69544812EBF3EB300C01C4E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E69544802EBF3EB300C01C4E /* SwiftUI.framework */; };
+		E69544922EBF3EB500C01C4E /* RunWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E695447C2EBF3EB300C01C4E /* RunWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E695449B2EBF40C700C01C4E /* exqt.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E695449A2EBF40C700C01C4E /* exqt.ttf */; };
+		E695449C2EBF40C700C01C4E /* exqt.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E695449A2EBF40C700C01C4E /* exqt.ttf */; };
+		E695449D2EBF40CF00C01C4E /* Knewave-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E695441F2EBF3A3900C01C4E /* Knewave-Regular.ttf */; };
 		E6PNKBF01 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = E6PNKPD01 /* PhoneNumberKit */; };
 /* End PBXBuildFile section */
 
@@ -31,17 +38,71 @@
 			remoteGlobalIDString = E6953F002EBB558000C01C4E;
 			remoteInfo = Superba;
 		};
+		E69544902EBF3EB500C01C4E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E6953EF92EBB558000C01C4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E695447B2EBF3EB300C01C4E;
+			remoteInfo = RunWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E69544972EBF3EB500C01C4E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E69544922EBF3EB500C01C4E /* RunWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		E6953F012EBB558000C01C4E /* Superba.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Superba.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6953F0E2EBB558200C01C4E /* SuperbaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SuperbaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SuperbaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E695441F2EBF3A3900C01C4E /* Knewave-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Knewave-Regular.ttf"; sourceTree = "<group>"; };
+		E695447C2EBF3EB300C01C4E /* RunWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RunWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E695447E2EBF3EB300C01C4E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		E69544802EBF3EB300C01C4E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		E695449A2EBF40C700C01C4E /* exqt.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = exqt.ttf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E69544232EBF3B1D00C01C4E /* Exceptions for "Superba" folder in "Superba" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E6953F002EBB558000C01C4E /* Superba */;
+		};
+		E69544962EBF3EB500C01C4E /* Exceptions for "RunWidget" folder in "RunWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E695447B2EBF3EB300C01C4E /* RunWidgetExtension */;
+		};
+		E69544992EBF403100C01C4E /* Exceptions for "Superba" folder in "RunWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				RunActivityAttributes.swift,
+			);
+			target = E695447B2EBF3EB300C01C4E /* RunWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E6953F032EBB558000C01C4E /* Superba */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E69544232EBF3B1D00C01C4E /* Exceptions for "Superba" folder in "Superba" target */,
+				E69544992EBF403100C01C4E /* Exceptions for "Superba" folder in "RunWidgetExtension" target */,
+			);
 			path = Superba;
 			sourceTree = "<group>";
 		};
@@ -53,6 +114,14 @@
 		E6953F1B2EBB558200C01C4E /* SuperbaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SuperbaUITests;
+			sourceTree = "<group>";
+		};
+		E69544822EBF3EB300C01C4E /* RunWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E69544962EBF3EB500C01C4E /* Exceptions for "RunWidget" folder in "RunWidgetExtension" target */,
+			);
+			path = RunWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -86,15 +155,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E69544792EBF3EB300C01C4E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E69544812EBF3EB300C01C4E /* SwiftUI.framework in Frameworks */,
+				E695447F2EBF3EB300C01C4E /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		E6953EF82EBB558000C01C4E = {
 			isa = PBXGroup;
 			children = (
+				E69544212EBF3A5300C01C4E /* Fonts */,
 				E6953F032EBB558000C01C4E /* Superba */,
 				E6953F112EBB558200C01C4E /* SuperbaTests */,
 				E6953F1B2EBB558200C01C4E /* SuperbaUITests */,
+				E69544822EBF3EB300C01C4E /* RunWidget */,
+				E695447D2EBF3EB300C01C4E /* Frameworks */,
 				E6953F022EBB558000C01C4E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -105,8 +186,27 @@
 				E6953F012EBB558000C01C4E /* Superba.app */,
 				E6953F0E2EBB558200C01C4E /* SuperbaTests.xctest */,
 				E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */,
+				E695447C2EBF3EB300C01C4E /* RunWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E69544212EBF3A5300C01C4E /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				E695441F2EBF3A3900C01C4E /* Knewave-Regular.ttf */,
+				E695449A2EBF40C700C01C4E /* exqt.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		E695447D2EBF3EB300C01C4E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E695447E2EBF3EB300C01C4E /* WidgetKit.framework */,
+				E69544802EBF3EB300C01C4E /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -119,10 +219,12 @@
 				E6953EFD2EBB558000C01C4E /* Sources */,
 				E6953EFE2EBB558000C01C4E /* Frameworks */,
 				E6953EFF2EBB558000C01C4E /* Resources */,
+				E69544972EBF3EB500C01C4E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E69544912EBF3EB500C01C4E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E6953F032EBB558000C01C4E /* Superba */,
@@ -187,6 +289,28 @@
 			productReference = E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E695447B2EBF3EB300C01C4E /* RunWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E69544932EBF3EB500C01C4E /* Build configuration list for PBXNativeTarget "RunWidgetExtension" */;
+			buildPhases = (
+				E69544782EBF3EB300C01C4E /* Sources */,
+				E69544792EBF3EB300C01C4E /* Frameworks */,
+				E695447A2EBF3EB300C01C4E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E69544822EBF3EB300C01C4E /* RunWidget */,
+			);
+			name = RunWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = RunWidgetExtension;
+			productReference = E695447C2EBF3EB300C01C4E /* RunWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -207,6 +331,9 @@
 					E6953F172EBB558200C01C4E = {
 						CreatedOnToolsVersion = 26.0.1;
 						TestTargetID = E6953F002EBB558000C01C4E;
+					};
+					E695447B2EBF3EB300C01C4E = {
+						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
 			};
@@ -231,6 +358,7 @@
 				E6953F002EBB558000C01C4E /* Superba */,
 				E6953F0D2EBB558200C01C4E /* SuperbaTests */,
 				E6953F172EBB558200C01C4E /* SuperbaUITests */,
+				E695447B2EBF3EB300C01C4E /* RunWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -240,6 +368,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E695449B2EBF40C700C01C4E /* exqt.ttf in Resources */,
+				E69544202EBF3A3900C01C4E /* Knewave-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,6 +384,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E695447A2EBF3EB300C01C4E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E695449D2EBF40CF00C01C4E /* Knewave-Regular.ttf in Resources */,
+				E695449C2EBF40C700C01C4E /* exqt.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -281,6 +420,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E69544782EBF3EB300C01C4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -293,6 +439,11 @@
 			isa = PBXTargetDependency;
 			target = E6953F002EBB558000C01C4E /* Superba */;
 			targetProxy = E6953F192EBB558200C01C4E /* PBXContainerItemProxy */;
+		};
+		E69544912EBF3EB500C01C4E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E695447B2EBF3EB300C01C4E /* RunWidgetExtension */;
+			targetProxy = E69544902EBF3EB500C01C4E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -429,9 +580,13 @@
 				DEVELOPMENT_TEAM = 6PVR7QDSY5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Superba/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Allow camera to record your selfie clip.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow contacts to invite friends to Superba.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow location to track runs and show your position.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Allow motion and fitness to measure steps, cadence, and pace during runs.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIAppFonts = "Knewave-Regular.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -467,9 +622,13 @@
 				DEVELOPMENT_TEAM = 6PVR7QDSY5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Superba/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Allow camera to record your selfie clip.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow contacts to invite friends to Superba.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow location to track runs and show your position.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Allow motion and fitness to measure steps, cadence, and pace during runs.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIAppFonts = "Knewave-Regular.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -578,6 +737,68 @@
 			};
 			name = Release;
 		};
+		E69544942EBF3EB500C01C4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RunWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RunWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.Superba.RunWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E69544952EBF3EB500C01C4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RunWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RunWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.Superba.RunWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -613,6 +834,15 @@
 			buildConfigurations = (
 				E6953F292EBB558200C01C4E /* Debug */,
 				E6953F2A2EBB558200C01C4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E69544932EBF3EB500C01C4E /* Build configuration list for PBXNativeTarget "RunWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E69544942EBF3EB500C01C4E /* Debug */,
+				E69544952EBF3EB500C01C4E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

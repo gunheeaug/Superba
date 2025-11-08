@@ -95,6 +95,8 @@ struct OnboardingView: View {
     @State private var selfiePulse: Bool = false
     @State private var showSelfieCamera: Bool = false
     @State private var contactsSearch: String = ""
+    @State private var selfieGIFURL: URL? = nil
+    @State private var selfieGIFHeight: CGFloat = 120
 
     @StateObject private var contactsFetcher = ContactsFetcher()
     @State private var selectedContactIndices: Set<Int> = []
@@ -220,7 +222,13 @@ struct OnboardingView: View {
                         }
                         .buttonStyle(.plain)
 
-                        Button(action: { showSelfieCamera = true }) {
+                        Button(action: {
+                            if selfieGIFURL != nil {
+                                step = .contacts
+                            } else {
+                                showSelfieCamera = true
+                            }
+                        }) {
                             Text("Continue")
                                 .font(.system(size: 20, weight: .semibold))
                                 .frame(maxWidth: .infinity, minHeight: 58)
@@ -341,46 +349,31 @@ struct OnboardingView: View {
                     .ignoresSafeArea(.keyboard)
                 }
             } else if step == .location {
-                VStack(spacing: 16) {
-                    Button(action: {
-                        locationRequester.request()
-                    }) {
-                        Text("Allow Location Access")
-                            .font(.system(size: 20, weight: .semibold))
-                            .frame(maxWidth: .infinity, minHeight: 58)
-                            .padding(.vertical, 2)
-                            .foregroundStyle(Color.black)
-                            .background(
-                                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                    .fill(
-                                        AnyShapeStyle(
-                                            LinearGradient(
-                                                colors: [
-                                                    Color(red: 0.78, green: 1.00, blue: 0.20),
-                                                    Color(red: 0.62, green: 0.90, blue: 0.00)
-                                                ],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 16)
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear.preference(key: BottomInsetHeightKey.self, value: proxy.size.height)
-                    }
-                )
+                // No bottom action for location; request will fire automatically after delay
+                EmptyView()
+                    .background(
+                        GeometryReader { _ in
+                            Color.clear.preference(key: BottomInsetHeightKey.self, value: 0)
+                        }
+                    )
             }
         }
         .sheet(isPresented: $showSelfieCamera) {
-            SelfieCameraSheet(isPresented: $showSelfieCamera) { _ in
-                step = .contacts
+            SelfieCameraSheet(isPresented: $showSelfieCamera) { videoURL in
+                // Convert to GIF and show in place; do not auto-advance
+                Task {
+                    if let gif = await PhotoLibraryStickerService.shared.processSelfieVideoAsAnimatedSticker(videoURL: videoURL) {
+                        await MainActor.run {
+                            self.selfieGIFURL = gif
+                            self.account.profileGIFURL = gif
+                            if let size = SelfieCameraSheet.getGIFPixelSize(from: gif), size.width > 0 {
+                                self.selfieGIFHeight = 74 * (size.height / size.width)
+                            } else {
+                                self.selfieGIFHeight = 120
+                            }
+                        }
+                    }
+                }
             }
         }
         .sheet(item: $messageDraft) { draft in
@@ -464,28 +457,63 @@ struct OnboardingView: View {
     private var selfieStep: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-			VStack(spacing: 40) {
-				Image("selfie-white")
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 64)
-                    .foregroundStyle(Color(red: 0.69, green: 0.965, blue: 0.0))
-                    .scaleEffect(selfiePulse ? 1.08 : 0.92)
-                    .opacity(selfiePulse ? 1.0 : 0.9)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
-                            selfiePulse.toggle()
-                        }
+		VStack(spacing: 28) {
+                if let gif = selfieGIFURL {
+                    ZStack(alignment: .bottom) {
+                        Circle()
+                            .fill(Color.white)
+							.frame(width: 86, height: 86)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(Color.neon, lineWidth: 6) // inward stroke
+                            )
+                            .offset(y: 6)
+                        GIFWebView(url: gif, objectFit: "contain")
+                            .frame(width: 74, height: selfieGIFHeight)
+							.clipShape(RoundedRectangle(cornerRadius: 37, style: .circular))
                     }
-                    .onTapGesture {
+                    Button(action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         showSelfieCamera = true
+                    }) {
+                        HStack(spacing: 6) {
+                            Image("Retake")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 14, height: 14)
+                                .foregroundStyle(.secondary)
+                            Text("Retake")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
                     }
+                } else {
+                    Image("selfie-white")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 64)
+                        .foregroundStyle(Color(red: 0.69, green: 0.965, blue: 0.0))
+                        .scaleEffect(selfiePulse ? 1.08 : 0.92)
+                        .opacity(selfiePulse ? 1.0 : 0.9)
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                                selfiePulse.toggle()
+                            }
+                        }
+                        .onTapGesture {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            showSelfieCamera = true
+                        }
+                }
 				
-				Text("Setup a quick selfie clip")
-					.font(.system(size: 17, weight: .regular))
-					.multilineTextAlignment(.center)
+				if selfieGIFURL == nil {
+					Text("Setup a quick selfie clip")
+						.font(.system(size: 17, weight: .regular))
+						.multilineTextAlignment(.center)
+				}
             }
             Spacer(minLength: 0)
         }
@@ -580,7 +608,7 @@ struct OnboardingView: View {
                                     ZStack {
                                         Circle()
                                             .fill(Color.green)
-                                            .frame(width: 12, height: 12)
+                                            .frame(width: 14, height: 14)
                                         Image(systemName: "message.fill")
                                             .resizable()
                                             .scaledToFit()
@@ -685,19 +713,18 @@ struct OnboardingView: View {
     }
 
     private var locationStep: some View {
-        VStack(spacing: 16) {
-            if let url = account.profileGIFURL {
-                GIFWebView(url: url, objectFit: "cover")
-                    .frame(width: 96, height: 96)
-                    .clipShape(Circle())
+        ZStack {
+            VStack(spacing: 16) {
+                Text("Ready?")
+                    .font(.custom("Knewave", size: 34))
+                    .foregroundStyle(.black)
             }
-            Text("Ready?")
-                .font(.largeTitle.bold())
-            Text("We use your location to show your current position and record runs.")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                locationRequester.request()
+            }
         }
         .onChange(of: locationRequester.authorization) { _ in
             // Once the system resolves (authorized/denied/restricted), proceed into the app
