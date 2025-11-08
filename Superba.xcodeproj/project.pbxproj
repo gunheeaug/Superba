@@ -1,0 +1,680 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E6953F2D2EBC240100C01C4E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F2C2EBC240100C01C4E /* Auth */; };
+		E6953F2F2EBC240100C01C4E /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F2E2EBC240100C01C4E /* Functions */; };
+		E6953F312EBC240100C01C4E /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F302EBC240100C01C4E /* PostgREST */; };
+		E6953F332EBC240100C01C4E /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F322EBC240100C01C4E /* Realtime */; };
+		E6953F352EBC240100C01C4E /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F342EBC240100C01C4E /* Storage */; };
+		E6953F372EBC240100C01C4E /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F362EBC240100C01C4E /* Supabase */; };
+		E6PNKBF01 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = E6PNKPD01 /* PhoneNumberKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E6953F0F2EBB558200C01C4E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E6953EF92EBB558000C01C4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6953F002EBB558000C01C4E;
+			remoteInfo = Superba;
+		};
+		E6953F192EBB558200C01C4E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E6953EF92EBB558000C01C4E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6953F002EBB558000C01C4E;
+			remoteInfo = Superba;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		E6953F012EBB558000C01C4E /* Superba.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Superba.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6953F0E2EBB558200C01C4E /* SuperbaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SuperbaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SuperbaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E6953F032EBB558000C01C4E /* Superba */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Superba;
+			sourceTree = "<group>";
+		};
+		E6953F112EBB558200C01C4E /* SuperbaTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SuperbaTests;
+			sourceTree = "<group>";
+		};
+		E6953F1B2EBB558200C01C4E /* SuperbaUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SuperbaUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E6953EFE2EBB558000C01C4E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E6953F312EBC240100C01C4E /* PostgREST in Frameworks */,
+				E6953F2F2EBC240100C01C4E /* Functions in Frameworks */,
+				E6953F2D2EBC240100C01C4E /* Auth in Frameworks */,
+				E6953F352EBC240100C01C4E /* Storage in Frameworks */,
+				E6953F332EBC240100C01C4E /* Realtime in Frameworks */,
+				E6953F372EBC240100C01C4E /* Supabase in Frameworks */,
+				E6PNKBF01 /* PhoneNumberKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6953F0B2EBB558200C01C4E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6953F152EBB558200C01C4E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E6953EF82EBB558000C01C4E = {
+			isa = PBXGroup;
+			children = (
+				E6953F032EBB558000C01C4E /* Superba */,
+				E6953F112EBB558200C01C4E /* SuperbaTests */,
+				E6953F1B2EBB558200C01C4E /* SuperbaUITests */,
+				E6953F022EBB558000C01C4E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E6953F022EBB558000C01C4E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E6953F012EBB558000C01C4E /* Superba.app */,
+				E6953F0E2EBB558200C01C4E /* SuperbaTests.xctest */,
+				E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E6953F002EBB558000C01C4E /* Superba */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6953F222EBB558200C01C4E /* Build configuration list for PBXNativeTarget "Superba" */;
+			buildPhases = (
+				E6953EFD2EBB558000C01C4E /* Sources */,
+				E6953EFE2EBB558000C01C4E /* Frameworks */,
+				E6953EFF2EBB558000C01C4E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E6953F032EBB558000C01C4E /* Superba */,
+			);
+			name = Superba;
+			packageProductDependencies = (
+				E6953F2C2EBC240100C01C4E /* Auth */,
+				E6953F2E2EBC240100C01C4E /* Functions */,
+				E6953F302EBC240100C01C4E /* PostgREST */,
+				E6953F322EBC240100C01C4E /* Realtime */,
+				E6953F342EBC240100C01C4E /* Storage */,
+				E6953F362EBC240100C01C4E /* Supabase */,
+				E6PNKPD01 /* PhoneNumberKit */,
+			);
+			productName = Superba;
+			productReference = E6953F012EBB558000C01C4E /* Superba.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E6953F0D2EBB558200C01C4E /* SuperbaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6953F252EBB558200C01C4E /* Build configuration list for PBXNativeTarget "SuperbaTests" */;
+			buildPhases = (
+				E6953F0A2EBB558200C01C4E /* Sources */,
+				E6953F0B2EBB558200C01C4E /* Frameworks */,
+				E6953F0C2EBB558200C01C4E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E6953F102EBB558200C01C4E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E6953F112EBB558200C01C4E /* SuperbaTests */,
+			);
+			name = SuperbaTests;
+			packageProductDependencies = (
+			);
+			productName = SuperbaTests;
+			productReference = E6953F0E2EBB558200C01C4E /* SuperbaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E6953F172EBB558200C01C4E /* SuperbaUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6953F282EBB558200C01C4E /* Build configuration list for PBXNativeTarget "SuperbaUITests" */;
+			buildPhases = (
+				E6953F142EBB558200C01C4E /* Sources */,
+				E6953F152EBB558200C01C4E /* Frameworks */,
+				E6953F162EBB558200C01C4E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E6953F1A2EBB558200C01C4E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E6953F1B2EBB558200C01C4E /* SuperbaUITests */,
+			);
+			name = SuperbaUITests;
+			packageProductDependencies = (
+			);
+			productName = SuperbaUITests;
+			productReference = E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E6953EF92EBB558000C01C4E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					E6953F002EBB558000C01C4E = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					E6953F0D2EBB558200C01C4E = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = E6953F002EBB558000C01C4E;
+					};
+					E6953F172EBB558200C01C4E = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = E6953F002EBB558000C01C4E;
+					};
+				};
+			};
+			buildConfigurationList = E6953EFC2EBB558000C01C4E /* Build configuration list for PBXProject "Superba" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E6953EF82EBB558000C01C4E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E6PNKPKG01 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E6953F022EBB558000C01C4E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E6953F002EBB558000C01C4E /* Superba */,
+				E6953F0D2EBB558200C01C4E /* SuperbaTests */,
+				E6953F172EBB558200C01C4E /* SuperbaUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E6953EFF2EBB558000C01C4E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6953F0C2EBB558200C01C4E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6953F162EBB558200C01C4E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E6953EFD2EBB558000C01C4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6953F0A2EBB558200C01C4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6953F142EBB558200C01C4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E6953F102EBB558200C01C4E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6953F002EBB558000C01C4E /* Superba */;
+			targetProxy = E6953F0F2EBB558200C01C4E /* PBXContainerItemProxy */;
+		};
+		E6953F1A2EBB558200C01C4E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6953F002EBB558000C01C4E /* Superba */;
+			targetProxy = E6953F192EBB558200C01C4E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E6953F202EBB558200C01C4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E6953F212EBB558200C01C4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E6953F232EBB558200C01C4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = appicon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Allow camera to record your selfie clip.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Allow contacts to invite friends to Superba.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow location to track runs and show your position.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.Superba;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E6953F242EBB558200C01C4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = appicon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Allow camera to record your selfie clip.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Allow contacts to invite friends to Superba.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow location to track runs and show your position.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.Superba;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E6953F262EBB558200C01C4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.SuperbaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Superba.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Superba";
+			};
+			name = Debug;
+		};
+		E6953F272EBB558200C01C4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.SuperbaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Superba.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Superba";
+			};
+			name = Release;
+		};
+		E6953F292EBB558200C01C4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.SuperbaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Superba;
+			};
+			name = Debug;
+		};
+		E6953F2A2EBB558200C01C4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PVR7QDSY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = pbd.SuperbaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Superba;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E6953EFC2EBB558000C01C4E /* Build configuration list for PBXProject "Superba" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6953F202EBB558200C01C4E /* Debug */,
+				E6953F212EBB558200C01C4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6953F222EBB558200C01C4E /* Build configuration list for PBXNativeTarget "Superba" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6953F232EBB558200C01C4E /* Debug */,
+				E6953F242EBB558200C01C4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6953F252EBB558200C01C4E /* Build configuration list for PBXNativeTarget "SuperbaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6953F262EBB558200C01C4E /* Debug */,
+				E6953F272EBB558200C01C4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6953F282EBB558200C01C4E /* Build configuration list for PBXNativeTarget "SuperbaUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6953F292EBB558200C01C4E /* Debug */,
+				E6953F2A2EBB558200C01C4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase-community/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+		E6PNKPKG01 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/marmelroy/PhoneNumberKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E6953F2C2EBC240100C01C4E /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		E6953F2E2EBC240100C01C4E /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		E6953F302EBC240100C01C4E /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		E6953F322EBC240100C01C4E /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		E6953F342EBC240100C01C4E /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		E6953F362EBC240100C01C4E /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6953F2B2EBC240100C01C4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		E6PNKPD01 /* PhoneNumberKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6PNKPKG01 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
+			productName = PhoneNumberKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E6953EF92EBB558000C01C4E /* Project object */;
+}
