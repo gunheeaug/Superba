@@ -12,6 +12,7 @@ import CoreMotion
 struct RunView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var account: AccountManager
+    @Environment(\.scenePhase) private var scenePhase
     @Binding var isPresented: Bool
     @State private var region: MKCoordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 0, longitude: 0), span: MKCoordinateSpan(latitudeDelta: 0.0008, longitudeDelta: 0.0008))
     @State private var hasCentered: Bool = false
@@ -22,8 +23,17 @@ struct RunView: View {
     @State private var isGeneratingGIF: Bool = false
     @State private var bannerShake: CGFloat = 0
     @State private var statsSheetHeight: CGFloat = 0
+    @State private var userIsPanningMap: Bool = false
+    @State private var recenterWorkItem: DispatchWorkItem? = nil
+    @State private var showProfileView: Bool = false
 
-    private let targetZoomLevel: Int = 19
+    private let targetZoomLevel: Int = 17
+    // Hard sheet heights (pt)
+    private let runningSheetHeight: CGFloat = 500
+    private let pausedSheetHeight: CGFloat = 400
+    // Fixed on-screen Y positions (percentage from top) for pulse while running/paused
+    private let yPercentWhenRunning: Double = 0.85
+    private let yPercentWhenPaused: Double = 0.82
     
     // PreferenceKey for measuring stats sheet height
     private struct StatsHeightKey: PreferenceKey {
@@ -47,9 +57,10 @@ struct RunView: View {
         return s == .authorizedAlways || s == .authorizedWhenInUse
     }
     
-    // Fallback center based on phone country code when location is unavailable
-    private func fallbackCenterFromPhone(_ phone: String?) -> CLLocationCoordinate2D {
-        guard let p = phone else { return CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194) } // SF default
+    // Fallback center based on phone country code when location is unavailable.
+    // Returns nil if we cannot infer a reasonable region (avoid defaulting to San Francisco).
+    private func fallbackCenterFromPhone(_ phone: String?) -> CLLocationCoordinate2D? {
+        guard let p = phone else { return nil }
         func has(_ cc: String) -> Bool { p.trimmingCharacters(in: .whitespaces).hasPrefix(cc) }
         if has("+82") { return CLLocationCoordinate2D(latitude: 37.5665, longitude: 126.9780) } // Seoul
         if has("+81") { return CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.6503) } // Tokyo
@@ -60,14 +71,14 @@ struct RunView: View {
         if has("+61") { return CLLocationCoordinate2D(latitude: -33.8688, longitude: 151.2093) } // Sydney
         if has("+65") { return CLLocationCoordinate2D(latitude: 1.3521, longitude: 103.8198) }  // Singapore
         if has("+86") { return CLLocationCoordinate2D(latitude: 39.9042, longitude: 116.4074) } // Beijing
-        return CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
+        return nil
     }
     
     private var currentPaceString: String {
         if let cur = tracker.currentPaceMinPerKm, cur.isFinite, cur > 0 {
             let m = Int(cur)
             let s = Int((cur - Double(m)) * 60)
-            return String(format: "%d:%02d", m, s)
+            return String(format: "%d'%02d\"", m, s)
         }
         // Fallback to average pace if no current pace yet
         let km = tracker.distanceMeters / 1000.0
@@ -90,19 +101,47 @@ struct RunView: View {
                 profileGIFURL: account.pendingSelfieGIFToAdd ?? account.profileGIFURL,
                 initials: userInitials,
                 isRunning: isRunning,
-                currentPace: currentPaceString
+                currentPace: currentPaceString,
+                manualPanLock: userIsPanningMap,
+                onUserPan: { isInteracting in
+                    if isInteracting {
+                        userIsPanningMap = true
+                        // Cancel any scheduled recenter when a new gesture starts
+                        recenterWorkItem?.cancel()
+                    }
+                    else {
+                        // Gesture ended — schedule one-time recenter after 5 seconds of inactivity
+                        scheduleRecenterAfterDelay(seconds: 5.0)
+                    }
+                }
             )
                 .ignoresSafeArea()
+            
+            // Top-right Profile button
+            HStack {
+                Spacer()
+                Button(action: { showProfileView = true }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 36, height: 36)
+                            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.black)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 16)
+                .padding(.top, 12)
+            }
+            .zIndex(2)
                 .onAppear { 
                     locationManager.start()
                     centerOnUserIfAvailable() 
                     if account.profileGIFURL == nil {
                         Task { await account.loadProfileFromSupabase() }
                     }
-                }
-                .onReceive(locationManager.$lastCoordinate) { _ in
-                    // Always follow user location
-                    updateMapToFollowUser()
                 }
                 .onAppear {
                     // Auto-resume if launched due to ongoing Live Activity
@@ -126,6 +165,24 @@ struct RunView: View {
                         account.liveActivityResumeDistance = nil
                         account.liveActivityResumeIsPaused = nil
                         account.presentRunViewDirect = false
+                    }
+                }
+                .onChange(of: isRunning) { _ in
+                    userIsPanningMap = false
+                    recenterWorkItem?.cancel()
+                    updateMapToFollowUser()
+                }
+                .onChange(of: isPaused) { _ in
+                    userIsPanningMap = false
+                    recenterWorkItem?.cancel()
+                    updateMapToFollowUser()
+                }
+                .onChange(of: scenePhase) { phase in
+                    if phase == .active {
+                        // App returned from background: allow and perform recenter
+                        userIsPanningMap = false
+                        recenterWorkItem?.cancel()
+                        updateMapToFollowUser()
                     }
                 }
             
@@ -257,7 +314,6 @@ struct RunView: View {
                                     .renderingMode(.template)
                                     .resizable()
                                     .frame(width: 20, height: 20)
-                                    .foregroundColor(.gray)
                             }
                             .frame(width: 44, height: 44)
                             .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
@@ -266,6 +322,7 @@ struct RunView: View {
                         .padding(.trailing, 16)
                     }
                     .padding(.bottom, 12)
+                    .zIndex(3)
                     RunStatsSheet(
                         elapsed: tracker.elapsedSeconds,
                         distanceMeters: tracker.distanceMeters,
@@ -276,73 +333,18 @@ struct RunView: View {
                         steps: tracker.stepCount,
                         elevationGain: tracker.elevationGainMeters,
                         locationAuthorized: isLocationAuthorized,
-                        onStart: {
-                            if !isLocationAuthorized {
-                                // Longer, heavier haptic + shake
-                                let heavy = UIImpactFeedbackGenerator(style: .heavy)
-                                heavy.prepare()
-                                heavy.impactOccurred(intensity: 1.0)
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                                    heavy.impactOccurred(intensity: 0.9)
-                                }
-                                withAnimation(.easeInOut(duration: 0.35)) { bannerShake += 1 }
-                            } else {
-                                let generator = UIImpactFeedbackGenerator(style: .medium)
-                                generator.prepare(); generator.impactOccurred()
-                                // Ensure Motion & Fitness permission at Start tap
-                                tracker.ensureMotionPermission { _ in
-                                    tracker.start()
-                                    recenterMapForRunning()  // Recenter map to show user at 15% height
-                                    isRunning = true
-                                    isPaused = false
-                                }
-                            }
-                        },
-                        onPauseToggle: {
-                            if isPaused { tracker.resume(); isPaused = false } else { tracker.pause(); isPaused = true }
-                        },
-                        onResume: {
-                            tracker.resume()
-                            isPaused = false
-                        },
-                        onFinish: {
-                            tracker.stop()
-                            tracker.endLiveActivity()
-                            
-                            // Show loading overlay
-                            withAnimation {
-                                isGeneratingGIF = true
-                            }
-                            
-                            // Generate combined GIF in background
-                            Task {
-                                await generateRunAssets()
-                                
-                                // Hide loading and show final summary
-                                await MainActor.run {
-                                    withAnimation {
-                                        isGeneratingGIF = false
-                                    }
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        isRunning = false
-                                        isPaused = false
-                                    }
-                                    // Delay showing final summary slightly for smooth transition
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            isFinished = true
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        onStart: { handleStart() },
+                        onPauseToggle: { handlePauseToggle() },
+                        onResume: { handleResume() },
+                        onFinish: { handleFinish() }
                     )
-                    .frame(height: isRunning ? (isPaused ? UIScreen.main.bounds.height * 0.48 : UIScreen.main.bounds.height * 0.6) : 240)  // Lower height when paused
+                    .frame(height: isRunning ? (isPaused ? pausedSheetHeight : runningSheetHeight) : 240)  // Fixed heights for paused/running
                     .frame(maxWidth: .infinity)
                     .background(
                         Color.white
                             .cornerRadius(35, corners: [.topLeft, .topRight])
                             .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: -2)
+                            .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 6)
                     )
                     // Measure the actual height of the stats sheet to offset map centering
                     .background(
@@ -353,6 +355,7 @@ struct RunView: View {
                     )
                     .clipShape(RoundedCorners(radius: 35, corners: [.topLeft, .topRight]))
                     .padding(.horizontal, 0)
+                    .zIndex(1)
                 }
                 .onPreferenceChange(StatsHeightKey.self) { h in
                     statsSheetHeight = h
@@ -384,7 +387,10 @@ struct RunView: View {
                                 isFinished = false
                             }
                         },
-                        onAugItHere: { handleAugItHereTapped() }
+                        onAugItHere: { handleAugItHereTapped() },
+                        cadenceSpm: tracker.cadence,
+                        steps: tracker.stepCount,
+                        elevationGain: tracker.elevationGainMeters
                     )
                     .environmentObject(account)
                 }
@@ -409,15 +415,110 @@ struct RunView: View {
                 }
                 .transition(.opacity)
             }
+            
+            // Full-screen Profile view (not a sheet)
+            if showProfileView {
+                ProfileView(isPresented: $showProfileView)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                    .zIndex(3)
+                    .ignoresSafeArea()
+            }
         }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+        if !isFinished && !showProfileView {
+            VStack(spacing: 16) {
+                if !isRunning {
+                    Button(action: { handleStart() }) {
+                        HStack(spacing: 4) {
+                            Image("SuperbaStart")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(isLocationAuthorized ? .black : .white)
+                            Text("Start")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(isLocationAuthorized ? .black : .white)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 58)
+                        .padding(.vertical, 2)
+                        .background(isLocationAuthorized ? Color.neon : Color(.systemGray4))
+                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!isLocationAuthorized)
+                } else if !isPaused {
+                    Button(action: { handlePauseToggle() }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "pause.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            Text("Pause")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 58)
+                        .padding(.vertical, 2)
+                        .background(Color.black)
+                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    HStack(spacing: 12) {
+                        Button(action: { handleResume() }) {
+                            HStack(spacing: 8) {
+                                Image("Resume")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundColor(.black)
+                                Text("Resume")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.black)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 58)
+                            .padding(.vertical, 2)
+                            .background(Color(white: 0.95))
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        Button(action: { handleFinish() }) {
+                            HStack(spacing: 8) {
+                                Image("FinishSquare")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundColor(.black)
+                                Text("Finish")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.black)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 58)
+                            .padding(.vertical, 2)
+                            .background(Color.neon)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 16)
+        }
+        
     }
+}
 
     private func centerOnUserIfAvailable(atScreenHeightPercent: Double = 0.65) {
         // If location is denied or no coordinate yet, use fallback
         guard let coord = locationManager.lastCoordinate, isLocationAuthorized else {
-            let fallback = fallbackCenterFromPhone(account.phoneNumber ?? UserDefaults.standard.string(forKey: "lastPhone"))
-            withAnimation(.easeInOut(duration: 0.25)) { region = regionFor(center: fallback, zoom: targetZoomLevel) }
-            hasCentered = true
+            if let fallback = fallbackCenterFromPhone(account.phoneNumber ?? UserDefaults.standard.string(forKey: "lastPhone")) {
+                withAnimation(.easeInOut(duration: 0.25)) { region = regionFor(center: fallback, zoom: targetZoomLevel) }
+                hasCentered = true
+            }
             return
         }
         if !hasCentered {
@@ -448,6 +549,8 @@ struct RunView: View {
     }
     
     private func updateMapToFollowUser() {
+        // Do not auto-recenter while user is manually interacting with the map
+        if userIsPanningMap { return }
         guard let coord = locationManager.lastCoordinate else { return }
         withAnimation(.easeInOut(duration: 0.25)) {
             var baseRegion = regionFor(center: coord, zoom: targetZoomLevel)
@@ -457,9 +560,29 @@ struct RunView: View {
             region = baseRegion
         }
     }
+    
+    private func scheduleRecenterAfterDelay(seconds: Double = 5.0) {
+        // Cancel any pending work and schedule a new one-shot recenter
+        recenterWorkItem?.cancel()
+        let work = DispatchWorkItem {
+            // Unlock and recenter if still appropriate
+            userIsPanningMap = false
+            updateMapToFollowUser()
+        }
+        recenterWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
+    }
 	
 	// Recenter button action – always recenters regardless of prior centering state
 	private func recenterMapToUserNow() {
+		// Haptic feedback on tap
+		let h = UIImpactFeedbackGenerator(style: .light)
+		h.prepare()
+		h.impactOccurred()
+		// Clear manual-pan lock so auto-follow resumes
+		userIsPanningMap = false
+        // Cancel any pending scheduled recenter (we're recentering now)
+        recenterWorkItem?.cancel()
 		guard let coord = locationManager.lastCoordinate else { return }
 		withAnimation(.easeInOut(duration: 0.25)) {
 			var baseRegion = regionFor(center: coord, zoom: targetZoomLevel)
@@ -480,8 +603,13 @@ struct RunView: View {
                                   span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta))
     }
     
-    // Compute the desired Y percentage for the user location between top safe area and the stats sheet
+    // Compute the desired Y percentage for the user location.
+    // - Running/Paused use fixed percentages (hard numbers)
+    // - Start (not running) centers within visible space above the sheet
     private func desiredUserYPercent() -> Double {
+        if isRunning {
+            return isPaused ? yPercentWhenPaused : yPercentWhenRunning
+        }
         let screenH = UIScreen.main.bounds.height
         let topInset: CGFloat = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?
             .windows.first?.safeAreaInsets.top ?? 0
@@ -494,6 +622,91 @@ struct RunView: View {
         desiredY = min(desiredY, screenH - bottomH - 1)
         let yPercent = max(0.05, min(0.95, desiredY / screenH))
         return Double(yPercent)
+    }
+    
+    // MARK: - Action handlers (shared by stat sheet and bottom inset)
+    private func handleStart() {
+        if !isLocationAuthorized {
+            let heavy = UIImpactFeedbackGenerator(style: .heavy)
+            heavy.prepare()
+            heavy.impactOccurred(intensity: 1.0)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                heavy.impactOccurred(intensity: 0.9)
+            }
+            withAnimation(.easeInOut(duration: 0.35)) { bannerShake += 1 }
+            return
+        }
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare(); generator.impactOccurred()
+        // Clear any manual-pan lock when mode changes to running
+        userIsPanningMap = false
+        recenterWorkItem?.cancel()
+        tracker.ensureMotionPermission { _ in
+            tracker.start()
+            recenterMapForRunning()
+            isRunning = true
+            isPaused = false
+            // Re-run recenter after the sheet animates to its new height
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                recenterWorkItem?.cancel()
+                updateMapToFollowUser()
+            }
+        }
+    }
+    
+    private func handlePauseToggle() {
+        if isPaused {
+            tracker.resume()
+            // Clear manual-pan lock on resume
+            userIsPanningMap = false
+            recenterWorkItem?.cancel()
+            isPaused = false
+            updateMapToFollowUser()
+        } else {
+            tracker.pause()
+            // Clear manual-pan lock on pause
+            userIsPanningMap = false
+            recenterWorkItem?.cancel()
+            isPaused = true
+            updateMapToFollowUser()
+        }
+    }
+    
+    private func handleResume() {
+        tracker.resume()
+        // Clear manual-pan lock on explicit resume
+        userIsPanningMap = false
+        recenterWorkItem?.cancel()
+        isPaused = false
+        updateMapToFollowUser()
+    }
+    
+    private func handleFinish() {
+        tracker.stop()
+        tracker.endLiveActivity()
+        // Clear manual-pan lock on finish
+        userIsPanningMap = false
+        recenterWorkItem?.cancel()
+        withAnimation {
+            isGeneratingGIF = true
+        }
+        Task {
+            await generateRunAssets()
+            await MainActor.run {
+                withAnimation {
+                    isGeneratingGIF = false
+                }
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isRunning = false
+                    isPaused = false
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isFinished = true
+                    }
+                }
+            }
+        }
     }
 
     // Compute a map region that fits the entire route with padding
@@ -817,7 +1030,6 @@ private struct RunStatsSheet: View {
             if isRunning {
                 if isPaused {
                     // Paused: center three rows (2 cols each) between top and buttons
-                    Spacer(minLength: 0)
                     VStack(spacing: 24) {
                         // Row 1: Time, Avg Pace
                         HStack(spacing: 8) {
@@ -836,8 +1048,8 @@ private struct RunStatsSheet: View {
                         }
                     }
                     .padding(.horizontal, 32)
-                    .frame(maxWidth: .infinity)
-                    .frame(maxHeight: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.top, 40)
                 } else {
                 // Vertical layout when running
                 VStack(spacing: 32) {
@@ -918,94 +1130,6 @@ private struct RunStatsSheet: View {
                 .padding(.horizontal, 24)  // Added horizontal padding
             }
             Spacer()
-            
-            // Button layout based on running state
-            if !isRunning {
-                // Not started - show Start button
-                Button(action: onStart) {
-                    HStack(spacing: 8) {
-                        Image("SuperbaStart")
-                            .renderingMode(.template)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
-                            .foregroundColor(locationAuthorized ? .black : .white)
-                        Text("Start")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(locationAuthorized ? .black : .white)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 58)
-                    .background(locationAuthorized ? Color.neon : Color(.systemGray4))
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .disabled(!locationAuthorized)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 36)  // Changed from 16 to 36
-            } else if !isPaused {
-                // Running - show Pause button
-                Button(action: onPauseToggle) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("Pause")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 60)
-                    .background(Color.black)  // Changed to black
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 36)  // Changed from 16 to 36
-            } else {
-                // Paused - show Resume and Finish buttons
-                HStack(spacing: 12) {
-                    Button(action: onResume) {
-                        HStack(spacing: 8) {
-                            Image("Resume")
-                                .renderingMode(.template)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 20, height: 20)
-                                .foregroundColor(.black)
-                            Text("Resume")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.black)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(Color(white: 0.95))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                    }
-                    .buttonStyle(.plain)
-                    
-                    Button(action: onFinish) {
-                        HStack(spacing: 8) {
-                            Image("Finish")
-                                .renderingMode(.template)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 20, height: 20)
-                                .foregroundColor(.black)
-                            Text("Finish")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.black)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(Color.neon)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 36)  // Changed from 16 to 36
-            }
         }
     }
 
@@ -1552,7 +1676,7 @@ final class RunTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
                     staleDate: Date().addingTimeInterval(60),
                     relevanceScore: 0
                 ),
-                dismissalPolicy: .after(.now + 3)
+                dismissalPolicy: .after(.now + 1)
             )
             print("✅ Live Activity ended")
         }
@@ -1571,6 +1695,8 @@ private struct RunMKMapView: UIViewRepresentable {
     var initials: String?
     var isRunning: Bool
     var currentPace: String
+    var manualPanLock: Bool
+    var onUserPan: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView(frame: .zero)
@@ -1583,11 +1709,16 @@ private struct RunMKMapView: UIViewRepresentable {
     }
 
     func updateUIView(_ map: MKMapView, context: Context) {
-        // Update region if changed (only update if there's a significant difference)
-        let latDiff = abs(map.region.center.latitude - region.center.latitude)
-        let lonDiff = abs(map.region.center.longitude - region.center.longitude)
-        if latDiff > 0.00001 || lonDiff > 0.00001 {
-            map.setRegion(region, animated: true)
+        // Keep pan callback updated
+        context.coordinator.onUserPan = onUserPan
+        // Only apply bound region when not manually panning
+        if !manualPanLock {
+            // Update region if changed (use very small threshold so vertical offsets due to sheet changes apply)
+            let latDiff = abs(map.region.center.latitude - region.center.latitude)
+            let lonDiff = abs(map.region.center.longitude - region.center.longitude)
+            if latDiff > 0.0000001 || lonDiff > 0.0000001 {
+                map.setRegion(region, animated: true)
+            }
         }
         
         // Update route overlay — only draw when actively running
@@ -1603,10 +1734,23 @@ private struct RunMKMapView: UIViewRepresentable {
         context.coordinator.updateUserLocation(map: map, coordinate: userCoordinate, gifURL: profileGIFURL, initials: initials, isRunning: isRunning, pace: currentPace)
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator {
+        let c = Coordinator()
+        c.onUserPan = onUserPan
+        return c
+    }
 
     final class Coordinator: NSObject, MKMapViewDelegate {
         private var userLocationAnnotation: MyLocationPulseAnnotation?
+        var onUserPan: ((Bool) -> Void)?
+        private var wasUserInteracting: Bool = false
+        
+        private func isUserInteracting(_ mapView: MKMapView) -> Bool {
+            guard let recognizers = mapView.gestureRecognizers else { return false }
+            return recognizers.contains { r in
+                r.state == .began || r.state == .changed
+            }
+        }
         
         func updateUserLocation(map: MKMapView, coordinate: CLLocationCoordinate2D?, gifURL: URL?, initials: String?, isRunning: Bool, pace: String) {
             if let coord = coordinate {
@@ -1664,6 +1808,20 @@ private struct RunMKMapView: UIViewRepresentable {
                 return renderer
             }
             return MKOverlayRenderer(overlay: overlay)
+        }
+        
+        func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
+            if isUserInteracting(mapView) {
+                wasUserInteracting = true
+                onUserPan?(true)
+            }
+        }
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            if wasUserInteracting {
+                wasUserInteracting = false
+                onUserPan?(false)
+            }
         }
     }
 }
@@ -1965,7 +2123,7 @@ private class MyLocationPulseAnnotationView: MKAnnotationView, WKNavigationDeleg
             // CRITICAL: Use .bottom alignment to match webContainer's bottom-aligned positioning
             let root = AnyView(
                 ZStack(alignment: .bottom) {
-                    AspectPreservingGIFView(url: u, width: size, maxHeight: size * 3.0)
+                    AspectPreservingGIFView(url: u, width: size, maxHeight: size * 3.0, bottomRadius: size / 2.0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .background(Color.clear)
@@ -1976,7 +2134,7 @@ private class MyLocationPulseAnnotationView: MKAnnotationView, WKNavigationDeleg
             hostingController = nil
             
             let hc = UIHostingController(rootView: root)
-            hc.view.backgroundColor = .clear
+            hc.view.backgroundColor = UIColor.clear
             hc.view.isUserInteractionEnabled = false
             hc.sizingOptions = []
             
@@ -1990,7 +2148,7 @@ private class MyLocationPulseAnnotationView: MKAnnotationView, WKNavigationDeleg
             
             // Set frame BEFORE adding to hierarchy
             hc.view.frame = webContainer.bounds
-            hc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            hc.view.autoresizingMask = [UIView.AutoresizingMask.flexibleWidth, UIView.AutoresizingMask.flexibleHeight]
             
             webContainer.addSubview(hc.view)
             hostingController = hc
@@ -2187,7 +2345,11 @@ private struct FinalRunSummaryView: View {
     let elapsed: Int
     let distanceMeters: Double
     let routeCoordinates: [CLLocationCoordinate2D]
+    let cadenceSpm: Double
+    let steps: Int
+    let elevationGainMeters: Double
     @EnvironmentObject var account: AccountManager
+    @State private var summaryStyleIndex: Int = 0
 
     private var timeString: String {
         let h = elapsed / 3600
@@ -2198,32 +2360,231 @@ private struct FinalRunSummaryView: View {
     }
 
     private var distanceString: String { String(format: "%.2fkm", distanceMeters / 1000.0) }
+    private var distanceValueString: String { String(format: "%.2f", distanceMeters / 1000.0) }
 
     private var paceString: String {
         let km = distanceMeters / 1000.0
-        guard km > 0.01 else { return "00'00/km" }
+        guard km > 0.01 else { return "00'00\"" }
         let secPerKm = Double(elapsed) / km
         let m = Int(secPerKm) / 60
         let s = Int(secPerKm) % 60
-        return String(format: "%02d:%02d/km", m, s)
+        return String(format: "%02d'%02d\"", m, s)
     }
 
     var body: some View {
         VStack(spacing: 0) {
             // Add space above the text
             Spacer()
-                .frame(height: 40)
+                .frame(height: 10)
             
-            // 3D rotating stats text (use actual route for 3D illustration)
-            Rotating3DStatsView(text: buildStatsMultilineText(), routeCoordinates: routeCoordinates)
-                .frame(height: 300)
+            // 2D stats block: swipeable style variants
+            TabView(selection: $summaryStyleIndex) {
+                // Style 1: Classic
+                VStack(spacing: 18) {
+                    VStack(spacing: 2) {
+                        Text("DISTANCE")
+                            .font(.system(size: 14, weight: .semibold))
+                            .italic()
+                            .foregroundColor(.white)
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(distanceValueString)
+                                .font(.system(size: 50, weight: .bold))
+                                .italic()
+                                .foregroundColor(.white)
+                            Text("km")
+                                .font(.system(size: 30, weight: .bold))
+                                .italic()
+                                .foregroundColor(.white)
+                        }
+                    }
+                    VStack(spacing: 2) {
+                        Text("AVG PACE")
+                            .font(.system(size: 14, weight: .semibold))
+                            .italic()
+                            .foregroundColor(.white)
+                        Text(paceString)
+                            .font(.system(size: 50, weight: .bold))
+                            .italic()
+                            .foregroundColor(.white)
+                    }
+                    VStack(spacing: 2) {
+                        Text("TIME")
+                            .font(.system(size: 14, weight: .semibold))
+                            .italic()
+                            .foregroundColor(.white)
+                        Text(timeString)
+                            .font(.system(size: 50, weight: .bold))
+                            .italic()
+                            .foregroundColor(.white)
+                    }
+                    // Include route illustration in the slide
+                    routeIllustration()
+                        .frame(height: 96)
+                        .padding(.top, -4)
+                }
+                .tag(0)
+                
+                // Style 2: Two-column grid layout
+                VStack(spacing: 10) {
+                    // Row 1
+                    HStack {
+                        Text(timeString)
+                            .font(.custom("exqt", size: 40))
+                            .monospacedDigit()
+                            .foregroundColor(.white)
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Text(paceString)
+                                .font(.custom("exqt", size: 40))
+                                .monospacedDigit()
+                                .foregroundColor(.white)
+                            Text("/KM")
+                                .font(.custom("exqt", size: 16))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                    }
+                    // Row 2 labels
+                    HStack {
+                        Text("TIME").font(.custom("exqt", size: 14)).italic().foregroundColor(.white.opacity(0.9))
+                        Spacer()
+                        Text("AVG PACE").font(.custom("exqt", size: 14)).italic().foregroundColor(.white.opacity(0.9))
+                    }
+                    // Row 3
+                    HStack {
+                        HStack(spacing: 6) {
+                            Text(distanceValueString)
+                                .font(.custom("exqt", size: 34))
+                                .monospacedDigit()
+                                .foregroundColor(.white)
+                            Text("KM")
+                                .font(.custom("exqt", size: 16))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                        Spacer()
+                        Text(String(format: "%d", Int(cadenceSpm.rounded())))
+                            .font(.custom("exqt", size: 34))
+                            .monospacedDigit()
+                            .foregroundColor(.white)
+                    }
+                    // Row 4 labels
+                    HStack {
+                        Text("DISTANCE").font(.custom("exqt", size: 14)).italic().foregroundColor(.white.opacity(0.9))
+                        Spacer()
+                        Text("CADENCE (SPM)").font(.custom("exqt", size: 14)).italic().foregroundColor(.white.opacity(0.9))
+                    }
+                    // Row 5
+                    HStack {
+                        Text("\(max(0, steps))")
+                            .font(.custom("exqt", size: 34))
+                            .monospacedDigit()
+                            .foregroundColor(.white)
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Text(String(format: "%.0f", max(0, elevationGainMeters)))
+                                .font(.custom("exqt", size: 34))
+                                .monospacedDigit()
+                                .foregroundColor(.white)
+                            Text("M")
+                                .font(.custom("exqt", size: 16))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                    }
+                    // Row 6 labels
+                    HStack {
+                        Text("STEPS").font(.custom("exqt", size: 14)).italic().foregroundColor(.white.opacity(0.9))
+                        Spacer()
+                        Text("ELEVATION GAIN").font(.custom("exqt", size: 14)).italic().foregroundColor(.white.opacity(0.9))
+                    }
+                }
+                .tag(1)
+                
+                // Style 3: Hand (Knewave labels)
+                VStack(spacing: 8) {
+                    // Route illustration on top, white stroke
+                    routeIllustrationWhite()
+                        .frame(height: 96)
+                        .padding(.top, -4)
+                    // Values only (no labels), Knewave font
+                    Text(timeString + " ")
+                        .font(.custom("Knewave-Regular", size: 52))
+                        .foregroundColor(.white)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(paceString + " ")
+                            .font(.custom("Knewave-Regular", size: 52))
+                            .foregroundColor(.white)
+                        Text("/km")
+                            .font(.custom("Knewave-Regular", size: 52))
+                            .foregroundColor(.white)
+                    }
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(distanceValueString + " ")
+                            .font(.custom("Knewave-Regular", size: 52))
+                            .foregroundColor(.white)
+                        Text("km")
+                            .font(.custom("Knewave-Regular", size: 52))
+                            .foregroundColor(.white)
+                    }
+                }
+                .tag(2)
+
+                // Style 4: NetworkFreeVersion
+                VStack(spacing: 18) {
+                    VStack(spacing: 8) {
+                        Text("DistancE")
+                            .font(.custom("NetworkFreeVersion", size: 24))
+                            .foregroundColor(.white)
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(distanceValueString)
+                                .font(.custom("NetworkFreeVersion", size: 70))
+                                .foregroundColor(.white)
+                            Text("km")
+                                .font(.custom("NetworkFreeVersion", size: 70))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    VStack(spacing: 8) {
+                        Text("Avg. PacE")
+                            .font(.custom("NetworkFreeVersion", size: 24))
+                            .foregroundColor(.white)
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(paceString)
+                                .font(.custom("NetworkFreeVersion", size: 70))
+                                .foregroundColor(.white)
+                            Text("/km")
+                                .font(.custom("NetworkFreeVersion", size: 70))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    VStack(spacing: 8) {
+                        Text("TIME")
+                            .font(.custom("NetworkFreeVersion", size: 24))
+                            .foregroundColor(.white)
+                        Text(timeString)
+                            .font(.custom("NetworkFreeVersion", size: 70))
+                            .foregroundColor(.white)
+                    }
+                    // Brand mark at the bottom in neon
+                    Text("SUPerbA")
+                        .font(.custom("NetworkFreeVersion", size: 20))
+                        .foregroundColor(.neon)
+                        .padding(.top, 4)
+                }
+                .tag(3)
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .padding(.bottom, 0)
             
-            // 2D route illustration below
-            routeIllustration()
-                .frame(height: 130)  // Slightly smaller height
+            // Slide indicator below the route illustration
+            HStack(spacing: 6) {
+                ForEach(0..<4, id: \.self) { idx in
+                    Circle()
+                        .fill(idx == summaryStyleIndex ? Color.white : Color.white.opacity(0.35))
+                        .frame(width: 6, height: 6)
+                }
+            }
+            .padding(.top, 2)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 12)
     }
     
     private func buildStatsMultilineText() -> String {
@@ -2262,16 +2623,17 @@ private struct FinalRunSummaryView: View {
                         let isVerySmallMovement = latRange < 0.0001 && lonRange < 0.0001
                         
                         if isVerySmallMovement {
-                            // Show a dot for very small movement (less than ~10m)
-                            Circle()
-                                .fill(Color(red: 0x5C/255.0, green: 0xBA/255.0, blue: 0xF2/255.0))
-                                .frame(width: 12, height: 12)
+                            // Show default route image when movement is very small
+                            Image("RouteDefault")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 64, height: 64)
                                 .position(x: geo.size.width / 2, y: geo.size.height / 2)
                         } else {
                             // Draw actual route from coordinates with gradient (A9E4FF → 1191E6)
                             let latRangeSafe = max(maxLat - minLat, 0.0001)
                             let lonRangeSafe = max(maxLon - minLon, 0.0001)
-                            let strokeWidth: CGFloat = 8
+                            let strokeWidth: CGFloat = 5
                             let padding: CGFloat = 32 + strokeWidth / 2
                             let availableWidth = geo.size.width - padding * 2
                             let availableHeight = geo.size.height - padding * 2
@@ -2328,11 +2690,79 @@ private struct FinalRunSummaryView: View {
                         p.move(to: CGPoint(x: origin.x, y: origin.y + h * 0.1))
                         p.addCurve(to: CGPoint(x: origin.x + w * 0.9, y: origin.y + h * 0.8), control1: CGPoint(x: origin.x + w * 0.2, y: origin.y + h * 0.0), control2: CGPoint(x: origin.x + w * 0.6, y: origin.y + h * 1.0))
                     }
-                    .stroke(Color(red: 0x5C/255.0, green: 0xBA/255.0, blue: 0xF2/255.0), style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round))
+                    .stroke(Color(red: 0x5C/255.0, green: 0xBA/255.0, blue: 0xF2/255.0), style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
                 }
             }
         }
-        .frame(height: 130)
+        .frame(height: 96)
+    }
+
+    // Monochrome white route variant for stylistic slides
+    @ViewBuilder
+    private func routeIllustrationWhite() -> some View {
+        GeometryReader { geo in
+            ZStack {
+                if !routeCoordinates.isEmpty {
+                    let lats = routeCoordinates.map { $0.latitude }
+                    let lons = routeCoordinates.map { $0.longitude }
+                    if let minLat = lats.min(), let maxLat = lats.max(),
+                       let minLon = lons.min(), let maxLon = lons.max() {
+                        let latRange = maxLat - minLat
+                        let lonRange = maxLon - minLon
+                        let isVerySmallMovement = latRange < 0.0001 && lonRange < 0.0001
+                        if isVerySmallMovement {
+                            Image("RouteDefault")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundColor(.white)
+                                .frame(width: 64, height: 64)
+                                .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        } else {
+                            let latRangeSafe = max(maxLat - minLat, 0.0001)
+                            let lonRangeSafe = max(maxLon - minLon, 0.0001)
+                            let strokeWidth: CGFloat = 5
+                            let padding: CGFloat = 32 + strokeWidth / 2
+                            let availableWidth = geo.size.width - padding * 2
+                            let availableHeight = geo.size.height - padding * 2
+                            let routeAspectRatio = lonRangeSafe / latRangeSafe
+                            let fitToWidth = routeAspectRatio > (availableWidth / availableHeight)
+                            let w: CGFloat = fitToWidth ? availableWidth : (availableHeight * routeAspectRatio)
+                            let h: CGFloat = fitToWidth ? (availableWidth / routeAspectRatio) : availableHeight
+                            let xOffset = padding + (availableWidth - w) / 2
+                            let yOffset = padding + (availableHeight - h) / 2
+                            let routePath: Path = {
+                                var p = Path()
+                                for (index, coord) in routeCoordinates.enumerated() {
+                                    let x = xOffset + CGFloat((coord.longitude - minLon) / lonRangeSafe) * w
+                                    let y = yOffset + CGFloat((maxLat - coord.latitude) / latRangeSafe) * h
+                                    let pt = CGPoint(x: x, y: y)
+                                    if index == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
+                                }
+                                return p
+                            }()
+                            routePath
+                                .stroke(style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round, lineJoin: .round))
+                                .foregroundColor(.white)
+                        }
+                    }
+                } else {
+                    Path { p in
+                        let strokeWidth: CGFloat = 5
+                        let padding: CGFloat = 32 + strokeWidth / 2
+                        let w = geo.size.width - padding * 2
+                        let h = geo.size.height - padding * 2
+                        let origin = CGPoint(x: padding, y: padding)
+                        p.move(to: CGPoint(x: origin.x, y: origin.y + h * 0.1))
+                        p.addCurve(to: CGPoint(x: origin.x + w * 0.9, y: origin.y + h * 0.8),
+                                   control1: CGPoint(x: origin.x + w * 0.2, y: origin.y + h * 0.0),
+                                   control2: CGPoint(x: origin.x + w * 0.6, y: origin.y + h * 1.0))
+                    }
+                    .stroke(Color.white, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                }
+            }
+        }
+        .frame(height: 96)
     }
 }
 
@@ -2424,6 +2854,10 @@ struct RunSummarySheet: View {
     let selfieGIFURL: URL?
     let onBack: () -> Void
     let onAugItHere: () -> Void
+    // Additional final stats
+    let cadenceSpm: Double
+    let steps: Int
+    let elevationGain: Double
     
     @EnvironmentObject var account: AccountManager
     @State private var showDiscardConfirm: Bool = false
@@ -2436,7 +2870,14 @@ struct RunSummarySheet: View {
                     .frame(height: 40)  // Space for selfie GIF that extends above
                 
                 // Stats and route (no scroll)
-                FinalRunSummaryView(elapsed: elapsed, distanceMeters: distanceMeters, routeCoordinates: routeCoordinates)
+                FinalRunSummaryView(
+                    elapsed: elapsed,
+                    distanceMeters: distanceMeters,
+                    routeCoordinates: routeCoordinates,
+                    cadenceSpm: cadenceSpm,
+                    steps: steps,
+                    elevationGainMeters: elevationGain
+                )
                 
                 Spacer(minLength: 12)  // Reduced space between route and buttons
                 
@@ -2521,15 +2962,37 @@ struct RunSummarySheet: View {
         // - In composed GIF, canvasWidth = 1.8 * diameter and circle diameter = canvasWidth / 1.8
         //   => To render the composed GIF so that its internal circle appears at `diameter`,
         //      set display width to `diameter * 1.8`.
-        let diameter: CGFloat = 55
-        let gifWidth = diameter - 5
+        let diameter: CGFloat = 64
+        let gifWidth: CGFloat = 56
         let gifHeight = gifWidth * 1.33
-        let displayWidth = diameter * 2.5
+        // Align GIF near the circle: set GIF width slightly smaller than circle
+        let displayWidth = gifWidth
         if let url = account.runProfileURL ?? selfieGIFURL {
             let isRunProfile = (account.runProfileURL != nil)
             ZStack(alignment: .bottom) {
-                AspectPreservingGIFView(url: url, width: displayWidth, maxHeight: gifHeight * 2)
-                    .offset(y: isRunProfile ? 5 : 0)
+                // Back pulse circle (white fill + neon stroke) to match map pulse
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0xA9/255.0, green: 0xE4/255.0, blue: 0xFF/255.0),
+                                    Color(red: 0x11/255.0, green: 0x91/255.0, blue: 0xE6/255.0)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: diameter, height: diameter)
+                        .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 0)
+                    Circle()
+                        .strokeBorder(Color.neon, lineWidth: 4)
+                        .frame(width: diameter, height: diameter)
+                }
+                .offset(y: 6)
+                
+                AspectPreservingGIFView(url: url, width: displayWidth, maxHeight: gifHeight * 1.6, bottomRadius: 28)
+                    .offset(y: 2) // moved up by 4pt from previous +6
             }
             // Keep the same outer container sizing as before for layout consistency
             .frame(width: diameter * 4, height: gifHeight * 2)
@@ -2755,10 +3218,10 @@ struct CheckerboardBackground: View {
                             width: squareSize,
                             height: squareSize
                         )
-                        context.fill(
-                            Path(rect),
-                            with: .color(isEven ? Color(white: 0.95) : .white)
-                        )
+                        // Dark theme checkerboard
+                        let darkA = Color(white: 0.10)   // near-black
+                        let darkB = Color(white: 0.16)   // slightly lighter
+                        context.fill(Path(rect), with: .color(isEven ? darkA : darkB))
                     }
                 }
             }
@@ -2773,7 +3236,15 @@ private struct AspectPreservingGIFView: View {
     let url: URL
     let width: CGFloat
     let maxHeight: CGFloat?
+    let bottomRadius: CGFloat?
     @State private var aspectHeightOverWidth: CGFloat? = nil
+    
+    init(url: URL, width: CGFloat, maxHeight: CGFloat? = nil, bottomRadius: CGFloat? = nil) {
+        self.url = url
+        self.width = width
+        self.maxHeight = maxHeight
+        self.bottomRadius = bottomRadius
+    }
 
     var body: some View {
         // CRITICAL FIX: Always use maxHeight if available, never shrink below initial size
@@ -2796,8 +3267,8 @@ private struct AspectPreservingGIFView: View {
                         UnevenRoundedRectangle(
                             cornerRadii: .init(
                                 topLeading: 8,
-                                bottomLeading: width / 2,
-                                bottomTrailing: width / 2,
+                                bottomLeading: bottomRadius ?? (width / 2),
+                                bottomTrailing: bottomRadius ?? (width / 2),
                                 topTrailing: 8
                             ),
                             style: .continuous

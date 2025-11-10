@@ -365,11 +365,16 @@ struct OnboardingView: View {
                     if let gif = await PhotoLibraryStickerService.shared.processSelfieVideoAsAnimatedSticker(videoURL: videoURL) {
                         await MainActor.run {
                             self.selfieGIFURL = gif
-                            self.account.profileGIFURL = gif
                             if let size = SelfieCameraSheet.getGIFPixelSize(from: gif), size.width > 0 {
                                 self.selfieGIFHeight = 74 * (size.height / size.width)
                             } else {
                                 self.selfieGIFHeight = 120
+                            }
+                        }
+                        // Upload to Supabase Storage and save to profile
+                        if let publicURL = await account.uploadProfileGIFToSupabase(gifURL: gif) {
+                            await MainActor.run {
+                                self.account.profileGIFURL = publicURL
                             }
                         }
                     }
@@ -715,8 +720,8 @@ struct OnboardingView: View {
     private var locationStep: some View {
         ZStack {
             VStack(spacing: 16) {
-                Text("Ready?")
-                    .font(.custom("Knewave", size: 34))
+                Text("Ready.")
+                    .font(.custom("Knewave", size: 40))
                     .foregroundStyle(.black)
             }
         }
@@ -741,13 +746,32 @@ struct OnboardingView: View {
         isSaving = true
         defer { isSaving = false }
         do {
-            // Update by phone, which is unique and belongs to the authed user
-            let phone = auth.phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-            _ = try await client.database
-                .from("profiles")
-                .update(["first_name": f, "last_name": l])
-                .eq("phone", value: phone)
-                .execute()
+            // Save by user id when available (UPDATE only to respect RLS)
+            if let session = try? await client.auth.session {
+                let uid = session.user.id
+                _ = try await client.database
+                    .from("profiles")
+                    .update(["first_name": f, "last_name": l])
+                    .eq("id", value: uid.uuidString)
+                    .execute()
+                // Reflect immediately in app state
+                await MainActor.run {
+                    account.firstName = f
+                    account.lastName = l
+                }
+            } else {
+                // Fallback to UPDATE by phone (no insert)
+                let phone = auth.phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+                _ = try await client.database
+                    .from("profiles")
+                    .update(["first_name": f, "last_name": l])
+                    .eq("phone", value: phone)
+                    .execute()
+                await MainActor.run {
+                    account.firstName = f
+                    account.lastName = l
+                }
+            }
             step = .selfie
         } catch {
             errorMessage = error.localizedDescription

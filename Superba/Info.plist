@@ -5,6 +5,8 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>Knewave-Regular.ttf</string>
+		<string>exqt.ttf</string>
+		<string>NetworkFreeVersion.ttf</string>
 	</array>
 </dict>
 </plist>

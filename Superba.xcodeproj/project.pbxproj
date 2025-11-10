@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E6737A292EC1DB2500E6961E /* NetworkFreeVersion.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E6737A282EC1DB2500E6961E /* NetworkFreeVersion.ttf */; };
+		E6737A2A2EC1DB2500E6961E /* NetworkFreeVersion.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E6737A282EC1DB2500E6961E /* NetworkFreeVersion.ttf */; };
 		E6953F2D2EBC240100C01C4E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F2C2EBC240100C01C4E /* Auth */; };
 		E6953F2F2EBC240100C01C4E /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F2E2EBC240100C01C4E /* Functions */; };
 		E6953F312EBC240100C01C4E /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E6953F302EBC240100C01C4E /* PostgREST */; };
@@ -62,6 +64,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E6737A282EC1DB2500E6961E /* NetworkFreeVersion.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = NetworkFreeVersion.ttf; sourceTree = "<group>"; };
 		E6953F012EBB558000C01C4E /* Superba.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Superba.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6953F0E2EBB558200C01C4E /* SuperbaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SuperbaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6953F182EBB558200C01C4E /* SuperbaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SuperbaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -195,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				E695441F2EBF3A3900C01C4E /* Knewave-Regular.ttf */,
+				E6737A282EC1DB2500E6961E /* NetworkFreeVersion.ttf */,
 				E695449A2EBF40C700C01C4E /* exqt.ttf */,
 			);
 			path = Fonts;
@@ -369,6 +373,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E695449B2EBF40C700C01C4E /* exqt.ttf in Resources */,
+				E6737A2A2EC1DB2500E6961E /* NetworkFreeVersion.ttf in Resources */,
 				E69544202EBF3A3900C01C4E /* Knewave-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -391,6 +396,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E6737A292EC1DB2500E6961E /* NetworkFreeVersion.ttf in Resources */,
 				E695449D2EBF40CF00C01C4E /* Knewave-Regular.ttf in Resources */,
 				E695449C2EBF40C700C01C4E /* exqt.ttf in Resources */,
 			);
@@ -744,6 +750,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = RunWidget/Assets.xcassets;
 				DEVELOPMENT_TEAM = 6PVR7QDSY5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RunWidget/Info.plist;
@@ -775,6 +782,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = RunWidget/Assets.xcassets;
 				DEVELOPMENT_TEAM = 6PVR7QDSY5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RunWidget/Info.plist;
